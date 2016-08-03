@@ -1,0 +1,140 @@
+package com.qtz.game.utils;
+
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
+import org.cocos2dx.lib.Cocos2dxHelper;
+import org.json.JSONObject;
+
+import android.content.Context;
+import android.content.Intent;
+import android.util.Log;
+import cn.jpush.android.api.JPushInterface;
+import cn.jpush.android.api.TagAliasCallback;
+import cn.jpush.android.data.JPushLocalNotification;
+
+import com.tencent.android.tpush.XGPushConfig;
+import com.tencent.android.tpush.XGPushManager;
+import com.tencent.android.tpush.service.XGPushService;
+
+public class Notification {
+	
+	//public static PlatformAPI mPlatformAPI;
+	///private static INotification localNotification;
+	private static Context pContext;
+	
+	public static void init(Context context){
+		//mPlatformAPI = new PlatformAPI( Q2.instance );
+		//mPlatformAPI.startPushService();
+		
+		///localNotification = new INotification(Q2.instance);
+		
+		pContext = context;
+		Log.e("--- pushMessage", "init pushMessage");
+		//XG push
+		Intent service = new Intent(pContext, XGPushService.class);
+		pContext.startService(service);
+		
+		TagAliasCallback callback = new TagAliasCallback() {				
+	        @Override
+	        public void gotResult(int responseCode, String alias, Set<String> tags) {
+	        switch (responseCode) {
+	          case 0:
+	            Log.i("--- jpush", "--- msg:"+"Set tag and alias success");
+	            break;
+	          case 6002:
+	        	  Log.i("--- jpush", "--- msg:"+"Failed to set alias and tags due to timeout. Try again after 60s.");
+	            break;
+	          default:
+	        	 Log.i("--- jpush", "--- msg:"+"Failed with errorCode = " + responseCode);
+	          }				
+	        }
+	};
+		
+		Set<String> tagSet = new HashSet<String>();
+		tagSet.add("tag1");
+		tagSet.add("tag2");
+		JPushInterface.setTags(pContext, tagSet, callback);
+	}
+	
+	public static void pushMessage(String msg, int delay, int repeats ){
+		//mPlatformAPI.pushLocalNotification( msg, delay, repeats);
+		
+		///localNotification.alert(msg, delay, repeats);
+
+		Log.e("--- pushMessage", "msg:"+msg+", delay:"+String.valueOf(delay)+", repeats:"+String.valueOf(repeats));
+		
+//		Calendar cal=Calendar.getInstance();   
+//		
+//		XGLocalMessage localMessage = new XGLocalMessage();
+//		localMessage.setTitle(Cocos2dxHelper.getAppName());
+//		
+//		
+//		Log.i("@@@111"+msg, cal.get(Calendar.MINUTE)+"");
+//		cal.add(Calendar.SECOND, delay);
+//		Log.i("@@@"+msg, cal.get(Calendar.HOUR_OF_DAY)+"");
+//		Log.i("@@@"+msg, cal.get(Calendar.MINUTE)+"");
+//		localMessage.setContent(msg);
+//		localMessage.setHour(String.valueOf(cal.get(Calendar.HOUR_OF_DAY)));
+//		localMessage.setMin(String.valueOf(cal.get(Calendar.MINUTE)));
+//		
+//		if (repeats != 0){
+//			for(int i = 0; i < 15; i++){
+//				if (i != 0){
+//					cal.add(Calendar.DAY_OF_MONTH, 1);	
+//				}	  
+//				String date = "";
+//				date = String.format("%d%02d%02d", cal.get(Calendar.YEAR), cal.get(Calendar.MONTH)+1, cal.get(Calendar.DATE));
+//				Log.i("@@@@@"+i, date);
+//				localMessage.setDate(date);
+//				XGPushManager.addLocalNotification(pContext, localMessage);
+//			}
+//		}
+//		else{
+//			String date = "";
+//			date = String.format("%d%02d%02d", cal.get(Calendar.YEAR), cal.get(Calendar.MONTH)+1, cal.get(Calendar.DATE));
+//			Log.i("@@@@@single", date);
+//			localMessage.setDate(date);
+//			XGPushManager.addLocalNotification(pContext, localMessage);
+//		}
+		
+		JPushLocalNotification ln = new JPushLocalNotification();
+		ln.setBuilderId(0);
+		ln.setContent(msg);
+		ln.setTitle("ln");
+		ln.setNotificationId(11111111) ;
+		ln.setBroadcastTime(System.currentTimeMillis() + 1000 * delay);
+
+		Map<String , Object> map = new HashMap<String, Object>() ;
+		map.put("name", "jpush") ;
+		map.put("test", "111") ;
+		JSONObject json = new JSONObject(map) ;
+		ln.setExtras(json.toString()) ;
+		JPushInterface.addLocalNotification(pContext, ln);
+	}
+	
+	public static void registerNotification( String uid ){
+		//String topic = String.format("%s/%s", Cocos2dxHelper.getProperty("YLT_CHANNEL"), uid);
+		//mPlatformAPI.subscibePushTopic( topic, PlatformAPI.PUSH_QOS_MID );
+
+		XGPushManager.registerPush(pContext, uid);
+		
+		//获得渠道号
+		XGPushConfig.setInstallChannel(pContext, Cocos2dxHelper.getChannelID());
+		//设置tag
+		XGPushManager.setTag(pContext, Cocos2dxHelper.getChannelID());
+		
+	}
+	
+	public static void removeNotification() {
+		//mPlatformAPI.removeLocalNotifications();
+		
+		///localNotification.cancelAll();
+		
+//		XGPushManager.clearLocalNotifications(pContext);
+		JPushInterface.clearLocalNotifications(pContext);
+	}
+
+}
